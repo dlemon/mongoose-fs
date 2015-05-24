@@ -1,80 +1,157 @@
 # mongoose-fs-fork
 
-Fork of Mongoose plugin for large attributes storage in GridFS
+Fork of Mongoose plugin for large attributes storage in gridstore
 
-This fork synchronizes the RetrieveBlobs() and save() functions with Promises. On node 0.12 I noticed synchronization issues, which did not retrieve the blobs saved in GridFS. A Pull request has been integrated into mongoose-fs but is not published in npm yet.
-
-A new milestone has been defined on Github, codename Hey Moose!, which aims at document decoration for the plugin. Please visit https://github.com/dlemon/mongoose-fs/milestones for use cases.
-
-## Why ?
-
-A basic mongo document can only keep a limited number of information. This plugin gives you the power to skip this limit by storing the big and not queried parts into GridFS.
+## Status
+This is the last update on this fork. Please use mongoose-gridstore module for latest updates.
 
 ## Installation
 
 ```shell
 npm install mongoose-fs-fork
 ```
-
 or add it to your `package.json`.
 
 ## Usage
+This module is a mongoose plugin that decorates your schema with large size attachments.
 
 ### Schema decoration
-
-First you'll need to decorate your schema with the plugin.
-
-Your GridFS keys **shouldn't be in your schema** and your schema should be in **strict mode** (default behavior). If you don't respect those two conditions, your keys will be stored in mongo and in GridFS **at the same time**.
-
-You won't be able to run queries on those keys, so ensure that it's just for storing additional data in your model.
-
-Here's an example :
-
 ```javascript
-var mongoose = require('mongoose');
-var mongooseFS = require('mongoose-fs-fork');
+var mongoose  = require('mongoose');
+var gridStore = require('mongoose-fs-fork');
 
-var fileSchema = mongoose.Schema({
-  name: String,
-  size: Number,
-  creation_date: Date
+var emailSchema = new mongoose.Schema({
+    from   : {type:String},
+    to     : {type:String},
+	subject: {type:String}
 });
 
-fileSchema.plugin(mongooseFS, {keys: ['content', 'complement'], mongoose: mongoose});
-var File = mongoose.model('File', fileSchema);
+emailSchema.plugin(gridStore);
+var Email = mongoose.model('Email', emailSchema);
 ```
-
-In this example, the content of the `content` and `complement` keys will be stored in GridFS.
 
 #### Plugin options
-
-For more control we provide those options to the plugin :
-
-* `keys` is mandatory. It's just an array of keys processed by the plugin.
-* `mongoose` is mandatory. Pass your mongoose module (Why ? because the internal mongoose's gridfs module should be absolutely the same....)
-* `bucket` is the GridFS in which you want to store this data. By default it will be `'fs'`.
-* `connection` is your mongo connection. By default it uses the default mongoose connection.
-
-### Saving a document
-
-Nothing has to be done here. The content of the keys will be automatically sent into GridFS.
-
-### Loading a document
-
-When you get a document back from mongo, you'll still have to unpack it's gridfs content.
-
-It remains very simple to use :
-
 ```javascript
-File.findById(id, function (err, file) {
-  if(err) {
-    return done(err);
-  }
-  file.retrieveBlobs(function (err) {
-    if(err) {
-      return done(err);
-    }
-    // Now everything is ready !
-  });
+
+emailSchema.plugin(gridStore, {    
+	keys     : ['property1', 'property2'],  //optional, property names that you want to add to the attachment object.
+    mongoose : mongoose  //optional, the mongoose instance your app is using. Defaults to latest mongoose version.
 });
 ```
+
+### Adding an attachment
+Once you have decorated your schema as shown above you can start adding attachments.
+
+```javascript
+var email = new Email();
+
+email.addAttachment("file.txt", new Buffer('test'))
+.then(function(doc) {
+    //email contains the attachment. promise returns the doc for further promise chaining.
+})
+.catch(function(err) {
+    throw err;
+});
+```
+
+### Accessing attachments
+
+```javascript
+email.attachments.forEach(function(attachment) {
+	console.log(attachment.name);
+	console.log(attachment.mime-type);
+});
+```
+
+#### Attachment object
+
+```javascript
+var attachment = {
+	filename : '',				//the filename of the attachment
+	buffer   : new Buffer(),	//buffer object with the content of your attachment
+	mimetype : ''				//mime-type of your attachment
+};
+```
+If you have specified the keys option, these keys are added automatically as properties to the attachment object.
+The keys will be stored as meta-data in the gridstore. Keys are explicitly updated as follows:
+
+```javascript
+email.attachments.forEach(function(attachment) {
+	attachment.property1 = 'test property 1'  //any javascript object you like
+    attachment.property2 = 'test property 2'  //any javascript object you like
+});
+
+email.save();
+```
+
+### Retrieving attachments
+
+```javascript
+email.loadAttachments()
+.then(function(doc) {
+    //your email object now contains the attachments
+    console.log(doc.attachments.length); 
+})
+.catch(function(err) {
+    throw err;
+});
+```
+
+### Saving attachments
+When you save the document its attachements are stored in the gridstore. The pre-middleware detaches the buffer, keys etc. from the attachments
+because mongodb cannot store large files. Since mongoose does not contain post middleware to manipulate the document after a save, 
+you have to reload attachments yourself right after a save (or find for that matter):
+
+```javascript
+var email = new Email();
+
+email.addAttachment("file.txt", new Buffer('test'))
+.then(function() {
+    return email.save();
+})
+.then(email.loadAttachments)
+.then(function(doc) {
+    //doc now contains all attachments again after a save.
+})
+.catch(function(err) {
+    throw(err);
+});
+
+//Query and loadAttachments
+Email.find({}, function(err,docs) {
+    if(err) throw err;
+    docs.forEach(function(doc) {
+        doc.loadAttachments.done();
+    });
+})
+```
+
+### Updating attachments
+```javascript
+
+email.updateAttachment('file.txt', new Buffer('updated test'))
+.then(function(doc) {
+	//modified document including attachments is given back by the promise for further chaining.
+})
+.catch(function(err) {
+	console.log('error updating attachment');
+	throw err;
+});
+```
+
+### Removing attachments
+
+```javascript
+email.removeAttachment('file.json')
+.then(function(doc) {
+	//modified document including updated attachments is given back by the promise
+})
+.catch(function(err) {
+	console.log('error removing attachment');
+	throw err;
+});
+```
+
+### Test
+Above scenarios have been tested and can be found in the test directory of the node module. 
+You can verify the package by executing mocha test in the root of the module.
