@@ -1,32 +1,36 @@
 {
-  "name": "mongoose-fs-fork",
-  "version": "0.2.13",
-  "description": "Fork of Mongoose plugin for large attributes storage in GridFS",
-  "author": "Dennis Lemon <dennis.lemon@sudselekt.com>",
-  "scripts": {
-    "test": "NODE_ENV=test mocha -R spec test/"
-  },
-  "main": "./index.js",
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:dlemon/mongoose-fs.git"
-  },
-  "keywords": [
-    "mongodb",
-    "mongoose",
-    "gridfs",
-    "plugin"
-  ],
-  "dependencies": {
-    "mongoose": "3.8.x",
-    "q": "1.2.x"
-  },
-  "devDependencies": {
-    "mocha": "1.17.x",
-    "should": "3.1.x"
-  },
-  "licence": "MIT",
-  "engines": {
-    "node": ">=0.10"
-  }
+    "name": "mongoose-fs-fork",
+    "version": "0.3.0",
+    "description": "Fork of Mongoose plugin for large attributes storage in gridstore",
+    "author": "Dennis Lemon <dennis.lemon@sudselekt.com>",
+    "scripts": {
+        "test": "NODE_ENV=test mocha -R spec test/"
+    },
+    "keywords": [
+        "mongoose",
+        "mongoose-plugin",
+        "mongodb",
+		"gridstore",
+		"attachements",
+        "mongoose-gridstore"
+    ],
+    "main": "index.js",
+    "dependencies": {
+        "mongoose": "latest",
+		"q": "latest",
+		"mime-types":"latest",
+        "rwlock":"latest"
+    },
+    "devDependencies": {
+        "mocha": "latest",
+        "chai": "latest"
+    },
+	"repository": {
+		"type": "git",
+		"url": "git@github.com:dlemon/mongoose-gridstore.git"
+	},
+    "license": "MIT",
+	"engines": {
+		"node": ">=0.10"
+	}
 }
