@@ -1,6 +1,6 @@
 {
     "name": "mongoose-fs-fork",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "Fork of Mongoose plugin for large attributes storage in gridstore",
     "author": "Dennis Lemon <dennis.lemon@sudselekt.com>",
     "scripts": {
@@ -27,7 +27,7 @@
     },
 	"repository": {
 		"type": "git",
-		"url": "git@github.com:dlemon/mongoose-gridstore.git"
+		"url": "git@github.com:dlemon/mongoose-fs-fork.git"
 	},
     "license": "MIT",
 	"engines": {
